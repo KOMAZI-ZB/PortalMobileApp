@@ -3,6 +3,7 @@ package com.example.portalapp.di
 import com.example.portalapp.BuildConfig
 import com.example.portalapp.network.AuthApi
 import com.example.portalapp.network.NotificationsApi
+import com.example.portalapp.network.FaqApi // ⬅️ added
 import com.example.portalapp.network.interceptors.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -52,4 +53,9 @@ object AppModule {
     @Provides @Singleton
     fun provideNotificationsApi(retrofit: Retrofit): NotificationsApi =
         retrofit.create(NotificationsApi::class.java)
+
+    // ⬇️ NEW: FaqApi provider
+    @Provides @Singleton
+    fun provideFaqApi(retrofit: Retrofit): FaqApi =
+        retrofit.create(FaqApi::class.java)
 }

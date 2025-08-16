@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.portalapp.views.notifications.NotificationsScreen
+import com.example.portalapp.views.faq.FaqScreen // ⬅️ added
 import kotlinx.coroutines.launch
 
 // ----- Routes -----
@@ -110,7 +111,9 @@ fun Navigation(
                 composable(Dest.Modules.route)       { PlaceholderScreen("Modules") }
                 composable(Dest.Scheduler.route)     { PlaceholderScreen("Scheduler") }
                 composable(Dest.Repository.route)    { PlaceholderScreen("Repository") }
-                composable(Dest.Faq.route)           { PlaceholderScreen("FAQ") }
+
+                // ✅ Real FAQ screen
+                composable(Dest.Faq.route)           { FaqScreen() }
             }
         }
     }
