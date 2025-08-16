@@ -3,7 +3,9 @@ package com.example.portalapp.di
 import com.example.portalapp.BuildConfig
 import com.example.portalapp.network.AuthApi
 import com.example.portalapp.network.NotificationsApi
-import com.example.portalapp.network.FaqApi // ⬅️ added
+import com.example.portalapp.network.FaqApi
+import com.example.portalapp.network.ModulesApi
+import com.example.portalapp.network.DocumentsApi // ⬅️ new
 import com.example.portalapp.network.interceptors.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -21,19 +23,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    @Provides @Singleton
-    fun provideMoshi(): Moshi =
-        Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .build()
+    @Provides @Singleton fun provideMoshi(): Moshi =
+        Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
     @Provides @Singleton
     fun provideOkHttp(authInterceptor: AuthInterceptor): OkHttpClient {
-        val logger = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+        val logger = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
         return OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)   // 🔐 attach JWT on every call
+            .addInterceptor(authInterceptor)
             .addInterceptor(logger)
             .build()
     }
@@ -46,16 +43,13 @@ object AppModule {
             .client(client)
             .build()
 
-    @Provides @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi =
-        retrofit.create(AuthApi::class.java)
+    @Provides @Singleton fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
+    @Provides @Singleton fun provideNotificationsApi(retrofit: Retrofit): NotificationsApi = retrofit.create(NotificationsApi::class.java)
+    @Provides @Singleton fun provideFaqApi(retrofit: Retrofit): FaqApi = retrofit.create(FaqApi::class.java)
+    @Provides @Singleton fun provideModulesApi(retrofit: Retrofit): ModulesApi = retrofit.create(ModulesApi::class.java)
 
+    // ⬇️ NEW
     @Provides @Singleton
-    fun provideNotificationsApi(retrofit: Retrofit): NotificationsApi =
-        retrofit.create(NotificationsApi::class.java)
-
-    // ⬇️ NEW: FaqApi provider
-    @Provides @Singleton
-    fun provideFaqApi(retrofit: Retrofit): FaqApi =
-        retrofit.create(FaqApi::class.java)
+    fun provideDocumentsApi(retrofit: Retrofit): DocumentsApi =
+        retrofit.create(DocumentsApi::class.java)
 }
