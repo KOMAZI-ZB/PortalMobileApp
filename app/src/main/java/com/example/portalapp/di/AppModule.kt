@@ -5,7 +5,8 @@ import com.example.portalapp.network.AuthApi
 import com.example.portalapp.network.NotificationsApi
 import com.example.portalapp.network.FaqApi
 import com.example.portalapp.network.ModulesApi
-import com.example.portalapp.network.DocumentsApi // ⬅️ new
+import com.example.portalapp.network.DocumentsApi
+import com.example.portalapp.network.SchedulerApi
 import com.example.portalapp.network.interceptors.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -48,8 +49,13 @@ object AppModule {
     @Provides @Singleton fun provideFaqApi(retrofit: Retrofit): FaqApi = retrofit.create(FaqApi::class.java)
     @Provides @Singleton fun provideModulesApi(retrofit: Retrofit): ModulesApi = retrofit.create(ModulesApi::class.java)
 
-    // ⬇️ NEW
+
     @Provides @Singleton
     fun provideDocumentsApi(retrofit: Retrofit): DocumentsApi =
         retrofit.create(DocumentsApi::class.java)
+
+
+    @Provides @Singleton
+    fun provideSchedulerApi(retrofit: Retrofit): SchedulerApi =
+        retrofit.create(SchedulerApi::class.java)
 }

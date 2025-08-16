@@ -19,6 +19,7 @@ import com.example.portalapp.views.notifications.NotificationsScreen
 import com.example.portalapp.views.faq.FaqScreen
 import com.example.portalapp.views.modules.ModulesScreen
 import com.example.portalapp.views.modules.ModuleDocumentsScreen
+import com.example.portalapp.views.scheduler.SchedulerScreen
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -137,7 +138,7 @@ fun Navigation(
                     )
                 }
 
-                composable(Dest.Scheduler.route)  { PlaceholderScreen("Scheduler") }
+                composable(Dest.Scheduler.route)  { SchedulerScreen() }   // ⬅️ IMPLEMENTED
                 composable(Dest.Repository.route) { PlaceholderScreen("Repository") }
                 composable(Dest.Faq.route)        { FaqScreen() }
 
