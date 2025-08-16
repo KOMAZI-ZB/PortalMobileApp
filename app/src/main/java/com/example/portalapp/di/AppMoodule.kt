@@ -2,6 +2,8 @@ package com.example.portalapp.di
 
 import com.example.portalapp.BuildConfig
 import com.example.portalapp.network.AuthApi
+import com.example.portalapp.network.NotificationsApi
+import com.example.portalapp.network.interceptors.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -21,16 +23,16 @@ object AppModule {
     @Provides @Singleton
     fun provideMoshi(): Moshi =
         Moshi.Builder()
-            // ✅ Critical so Moshi understands Kotlin data classes
             .add(KotlinJsonAdapterFactory())
             .build()
 
     @Provides @Singleton
-    fun provideOkHttp(): OkHttpClient {
+    fun provideOkHttp(authInterceptor: AuthInterceptor): OkHttpClient {
         val logger = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)   // 🔐 attach JWT on every call
             .addInterceptor(logger)
             .build()
     }
@@ -46,4 +48,8 @@ object AppModule {
     @Provides @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
+
+    @Provides @Singleton
+    fun provideNotificationsApi(retrofit: Retrofit): NotificationsApi =
+        retrofit.create(NotificationsApi::class.java)
 }
