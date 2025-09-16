@@ -22,10 +22,13 @@ data class ClassSession(
     val endTime: String
 )
 
+
 data class Assessment(
-    val id: Int,
+    val id: Int? = null,
     val title: String,
-    val date: String,               // yyyy-MM-dd
+    val description: String? = null,  // ← NEW
+    val moduleCode: String,           // ← NEW
+    val date: String,                 // "yyyy-MM-dd"
     val startTime: String? = null,
     val endTime: String? = null,
     val dueTime: String? = null,

@@ -29,13 +29,16 @@ fun ClassSessionDto.toModel(): ClassSession = ClassSession(
     endTime = endTime.trim()
 )
 
-fun AssessmentDto.toModel(): Assessment = Assessment(
+/* -------- Assessments (NEW) -------- */
+fun AssessmentDto.toModel() = Assessment(
     id = id,
-    title = title.trim(),
-    date = date.trim(),
-    startTime = startTime?.trim(),
-    endTime = endTime?.trim(),
-    dueTime = dueTime?.trim(),
-    venue = venue?.trim(),
+    title = title,
+    description = description,   // ← NEW
+    moduleCode = moduleCode,     // ← NEW
+    date = date,
+    startTime = startTime,
+    endTime = endTime,
+    dueTime = dueTime,
+    venue = venue,
     isTimed = isTimed
 )

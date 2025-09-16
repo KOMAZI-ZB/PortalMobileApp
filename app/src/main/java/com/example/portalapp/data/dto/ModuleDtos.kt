@@ -27,8 +27,10 @@ data class ClassSessionDto(
 data class AssessmentDto(
     @field:Json(name = "id") val id: Int,
     @field:Json(name = "title") val title: String,
-    @field:Json(name = "date") val date: String,           // yyyy-MM-dd
-    @field:Json(name = "startTime") val startTime: String? = null,
+    @field:Json(name = "description") val description: String? = null,  // ← NEW
+    @field:Json(name = "moduleCode") val moduleCode: String,            // ← NEW
+    @field:Json(name = "date") val date: String,                        // "yyyy-MM-dd"
+    @field:Json(name = "startTime") val startTime: String? = null,      // "HH:mm[:ss]"
     @field:Json(name = "endTime") val endTime: String? = null,
     @field:Json(name = "dueTime") val dueTime: String? = null,
     @field:Json(name = "venue") val venue: String? = null,
