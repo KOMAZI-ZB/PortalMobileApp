@@ -42,33 +42,40 @@ fun FaqScreen(
     vm: FaqViewModel = hiltViewModel()
 ) {
     val state by vm.ui.collectAsState()
+    val lightBlue = Color(0xFFCAF5F6)
 
     LaunchedEffect(Unit) { vm.refresh() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(12.dp)
     ) {
-        // Search
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+        // ── Light-blue second bar (like other screens) with the search on it ──
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(lightBlue)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            SearchFieldCompact(
-                value = state.search,
-                onValueChange = vm::onSearchChange,
-                onSearch = vm::applySearch,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-                    .heightIn(min = 20.dp, max = 30.dp) // thin height per your setting
-            )
-            TextButton(
-                onClick = vm::applySearch,
-                enabled = !state.loading
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Search", color = Color.Black) // ← Search text in black
+                SearchFieldCompact(
+                    value = state.search,
+                    onValueChange = vm::onSearchChange,
+                    onSearch = vm::applySearch,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                        .heightIn(min = 20.dp, max = 30.dp) // thin height per your setting
+                )
+                TextButton(
+                    onClick = vm::applySearch,
+                    enabled = !state.loading
+                ) {
+                    Text("Search", color = Color.Black) // stays black for consistency
+                }
             }
         }
 
@@ -76,17 +83,32 @@ fun FaqScreen(
 
         when {
             state.loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             }
             state.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(state.error!!, color = MaterialTheme.colorScheme.error)
                 }
             }
             state.items.isEmpty() -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         if (state.search.isBlank()) "No FAQs yet."
                         else "No results for “${state.search}”.",
@@ -95,7 +117,13 @@ fun FaqScreen(
                 }
             }
             else -> {
-                FaqList(state.items)
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp)
+                ) {
+                    FaqList(state.items)
+                }
             }
         }
     }
@@ -112,7 +140,7 @@ private fun SearchFieldCompact(
     val shape = RoundedCornerShape(12.dp)
     val borderColor = Color.Black // ← Border set to black
 
-    // Slim, rounded "outlined" container
+    // On the light-blue second bar; keep background transparent so bar color shows through
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -126,20 +154,16 @@ private fun SearchFieldCompact(
                 .fillMaxWidth()
                 .heightIn(min = 30.dp, max = 40.dp) // keep container thin
         ) {
-            // Left search icon from res/drawable/search
             Image(
                 painter = painterResource(id = R.drawable.search),
                 contentDescription = "Search",
-                modifier = Modifier
-                    .size(50.dp)
+                modifier = Modifier.size(50.dp)
             )
 
             Spacer(Modifier.width(2.dp))
 
-            // Text input area
             Box(
-                modifier = Modifier
-                    .weight(1f),
+                modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart
             ) {
                 BasicTextField(
@@ -147,7 +171,7 @@ private fun SearchFieldCompact(
                     onValueChange = onValueChange,
                     singleLine = true,
                     textStyle = TextStyle(
-                        fontSize = 12.sp,          // small so it won't clip at 20–30dp height
+                        fontSize = 12.sp,
                         lineHeight = 14.sp,
                         color = LocalContentColor.current
                     ),
@@ -160,10 +184,9 @@ private fun SearchFieldCompact(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp) // tiny vertical padding
+                        .padding(vertical = 2.dp)
                 )
 
-                // Placeholder when empty (sits next to icon)
                 if (value.isEmpty()) {
                     Text(
                         text = "search using key words",
@@ -178,13 +201,12 @@ private fun SearchFieldCompact(
 
 @Composable
 private fun FaqList(items: List<FaqEntry>) {
-    // Track expanded items locally; we don't need to persist on process death.
     var expandedIds by remember { mutableStateOf(setOf<Int>()) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 12.dp) // proper spacing between/around cards
+        contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         items(items, key = { it.id }) { entry ->
             val expanded = remember(expandedIds) { expandedIds.contains(entry.id) }
@@ -210,7 +232,6 @@ private fun onlyDate(isoString: String): String {
             try {
                 LocalDate.parse(isoString).format(out)
             } catch (_: Throwable) {
-                // Fallback: first 10 chars if already like "YYYY-MM-DD..."
                 if (isoString.length >= 10) isoString.substring(0, 10) else isoString
             }
         }
@@ -243,7 +264,6 @@ private fun FaqCard(
                 )
                 if (entry.lastUpdated.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    // Bottom-right, date-only (YYYY-MM-DD), nothing else
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End

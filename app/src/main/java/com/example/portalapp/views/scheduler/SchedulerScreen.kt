@@ -576,16 +576,16 @@ private fun ClassTab(
     onDownloadAll: () -> Unit
 ) {
     val todayDoW = remember { LocalDate.now().dayOfWeek }        // today’s weekday
-    var selectedDoW by remember { mutableStateOf(todayOrMonday(todayDoW)) } // Mon–Sat only, no Sunday
+    var selectedDoW by remember { mutableStateOf(todayOrMonday(todayDoW)) } // Mon–Fri only; default Monday if Sat/Sun
 
     // Normalize items ordering and group by weekday for quick lookups
     val normalized = remember(items) {
         val order = mapOf(
             "monday" to 1, "tuesday" to 2, "wednesday" to 3,
-            "thursday" to 4, "friday" to 5, "saturday" to 6
+            "thursday" to 4, "friday" to 5
         )
         items
-            .filter { it.weekDay.lowercase(Locale.ROOT) in order.keys } // ignore Sundays
+            .filter { it.weekDay.lowercase(Locale.ROOT) in order.keys } // ignore Saturday & Sunday
             .sortedWith(
                 compareBy<ClassScheduleItem>(
                     { order[it.weekDay.lowercase(Locale.ROOT)] ?: 99 },
@@ -615,7 +615,7 @@ private fun ClassTab(
                         .fillMaxSize()
                         .padding(horizontal = 12.dp)
                 ) {
-                    // Weekday strip (Mon–Sat), NO DATES
+                    // Weekday strip (Mon–Fri), NO DATES
                     ClassWeekStrip(
                         selected = selectedDoW,
                         onSelect = { selectedDoW = it }
@@ -674,7 +674,7 @@ private fun ClassWeekStrip(
     val lightBlue = Color(0xFFCAF5F6)
     val days = listOf(
         DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
-        DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+        DayOfWeek.THURSDAY, DayOfWeek.FRIDAY
     )
 
     ElevatedCard(
@@ -868,20 +868,16 @@ private fun AssessmentTab(
             error != null -> ErrorBox(error, onRetry)
             ordered.isEmpty() -> EmptyBox("No assessments for this semester.")
             else -> {
-                // Determine earliest assessment date
-                val earliestDate = remember(ordered) {
-                    ordered.mapNotNull { parseLocalDate(it.date) }.minOrNull()
+                // ✅ Only include months that actually have assessments
+                val availableMonths: List<YearMonth> = remember(ordered) {
+                    val months = ordered.mapNotNull { parseLocalDate(it.date) }
+                        .map { YearMonth.from(it) }
+                        .distinct()
+                        .sorted()
+                    if (months.isEmpty()) listOf(YearMonth.now()) else months
                 }
-
-                // Build ALL 12 months for that year (Jan..Dec), default to earliest month
-                val yearForMonths = earliestDate?.year ?: LocalDate.now().year
-                val allMonths: List<YearMonth> = remember(yearForMonths) {
-                    (1..12).map { m -> YearMonth.of(yearForMonths, m) }
-                }
-                var monthIndex by remember(allMonths, earliestDate) {
-                    mutableStateOf((earliestDate?.monthValue ?: LocalDate.now().monthValue) - 1)
-                }
-                val selectedMonth = allMonths[monthIndex.coerceIn(0, allMonths.lastIndex)]
+                var monthIndex by remember(availableMonths) { mutableStateOf(0) }
+                val selectedMonth = availableMonths[monthIndex.coerceIn(0, availableMonths.lastIndex)]
 
                 // Weekday selection: default Monday (no "Today" logic here)
                 var selectedDoW by remember { mutableStateOf(DayOfWeek.MONDAY) }
@@ -900,13 +896,13 @@ private fun AssessmentTab(
                         .fillMaxSize()
                         .padding(horizontal = 12.dp)
                 ) {
-                    // Month picker (chevrons) over the full-year month list
+                    // Month picker (chevrons) over ONLY the months with assessments
                     AssessmentMonthPicker(
                         month = selectedMonth,
                         canPrev = monthIndex > 0,
-                        canNext = monthIndex < allMonths.lastIndex,
+                        canNext = monthIndex < availableMonths.lastIndex,
                         onPrev = { if (monthIndex > 0) monthIndex-- },
-                        onNext = { if (monthIndex < allMonths.lastIndex) monthIndex++ }
+                        onNext = { if (monthIndex < availableMonths.lastIndex) monthIndex++ }
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -1335,9 +1331,9 @@ private fun prettyBookedBy(raw: String): String? {
     return if (looksNumeric) null else raw
 }
 
-// Helper to force Monday when today is Sunday (Class UI ignores Sundays)
+// Helper to force Monday when today is Saturday or Sunday (Class UI shows Mon–Fri only)
 private fun todayOrMonday(today: DayOfWeek): DayOfWeek {
-    return if (today == DayOfWeek.SUNDAY) DayOfWeek.MONDAY else today
+    return if (today == DayOfWeek.SATURDAY || today == DayOfWeek.SUNDAY) DayOfWeek.MONDAY else today
 }
 
 // Parse ISO date safely
