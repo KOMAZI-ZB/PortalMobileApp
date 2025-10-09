@@ -3,7 +3,10 @@ package com.example.portalapp.views.scheduler
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,12 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.portalapp.R
 import com.example.portalapp.models.Assessment
 import com.example.portalapp.models.ClassScheduleItem
 import com.example.portalapp.models.LabBooking
@@ -54,22 +56,21 @@ private val BOOKING_CARD_ELEVATION = 10.dp
 private val BOOKING_TEXT_GAP = 2.dp
 
 // Class-specific tweakables
-private val CLASS_CARD_ELEVATION = 10.dp              // card lift for class items
-private val MODULE_VENUE_GAP = 8.dp                   // vertical gap between module code and venue row
+private val CLASS_CARD_ELEVATION = 10.dp
+private val MODULE_VENUE_GAP = 8.dp
 
-private val VENUE_ICON_SIZE = 16.dp                   // icon size (leave as-is)
-private val VENUE_ICON_START_NUDGE = (-4).dp          // move icon left to align with module code’s left edge
-private val VENUE_TEXT_GAP = 0.dp                     // gap between icon and “Venue:” text (0 = none)
+private val VENUE_ICON_SIZE = 16.dp
+private val VENUE_ICON_START_NUDGE = (-4).dp
+private val VENUE_TEXT_GAP = 0.dp
 
 // ✨ New font-size knobs
-private val MODULE_CODE_FONT_SIZE = 17.sp             // ↔ increase/decrease module code size here
-private val VENUE_TEXT_FONT_SIZE = 12.sp              // ↔ increase/decrease “Venue: …” text size here
+private val MODULE_CODE_FONT_SIZE = 17.sp
+private val VENUE_TEXT_FONT_SIZE = 12.sp
 
-private val WEEKDAY_CELL_HEIGHT = 56.dp               // height of weekday strip cells (Class)
-private val WEEKDAY_GAP = 6.dp                        // gap between weekday cells
-private val WEEKDAY_CORNER = 16.dp                    // rounding for strip container
-private val SEMESTER_CHIP_GAP = 4.dp                  // tighter gap between "1" and "2"
-private val SEMESTER_LABEL_SIZE = 16.sp               // slight font bump for semester chips
+private val WEEKDAY_CELL_HEIGHT = 56.dp
+private val WEEKDAY_GAP = 6.dp
+private val WEEKDAY_CORNER = 16.dp
+private val SEMESTER_LABEL_SIZE = 16.sp // (kept for reference; chips removed)
 /* -------------------------------------------------------------- */
 
 @Composable
@@ -94,13 +95,17 @@ fun SchedulerScreen(
     // Colors to match your app
     val blue = Color(0xFF0D6EFD)
     val lightBlue = Color(0xFFCAF5F6)
+    val offWhite = Color(0xFFF7F7F7)
     val grey = Color(0xFF6B7280)
 
     Column(Modifier.fillMaxSize()) {
+        // ===== Top bar: main tabs (unchanged) =====
         TabRow(
             selectedTabIndex = state.selectedTab,
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = lightBlue,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            containerColor = Color.White,
             contentColor = blue,
             indicator = { positions ->
                 TabRowDefaults.Indicator(
@@ -114,109 +119,112 @@ fun SchedulerScreen(
         ) {
             Tab(
                 selected = state.selectedTab == 0,
+                modifier = Modifier.height(40.dp),
                 onClick = { vm.onTabChange(0) },
                 text = {
                     Text(
                         "Lab",
                         fontWeight = if (state.selectedTab == 0) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (state.selectedTab == 0) blue else grey
+                        color = if (state.selectedTab == 0) blue else Color.Black
                     )
                 }
             )
             Tab(
                 selected = state.selectedTab == 1,
+                modifier = Modifier.height(40.dp),
                 onClick = { vm.onTabChange(1) },
                 text = {
                     Text(
                         "Class",
                         fontWeight = if (state.selectedTab == 1) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (state.selectedTab == 1) blue else grey
+                        color = if (state.selectedTab == 1) blue else Color.Black
                     )
                 }
             )
             Tab(
                 selected = state.selectedTab == 2,
+                modifier = Modifier.height(40.dp),
                 onClick = { vm.onTabChange(2) },
                 text = {
                     Text(
                         "Assessments",
                         fontWeight = if (state.selectedTab == 2) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (state.selectedTab == 2) blue else grey
+                        color = if (state.selectedTab == 2) blue else Color.Black
                     )
                 }
             )
         }
 
-        // Top controls:
-        // - Class: right-aligned Semester chips (no Download button).
-        // - Assessments: Semester chips ONLY (download icon moves into the weekday header).
-        when (state.selectedTab) {
-            1 -> {
-                Row(
+        // ===== Thin 3rd bar: Semester filter (unchanged) =====
+        val semesterTabIndex = if (state.semester == 1) 0 else 1
+        TabRow(
+            selectedTabIndex = semesterTabIndex,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(30.dp),
+            containerColor = offWhite,
+            contentColor = blue,
+            indicator = { positions ->
+                TabRowDefaults.Indicator(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
+                        .tabIndicatorOffset(positions[semesterTabIndex])
+                        .height(2.dp),
+                    color = blue
+                )
+            },
+            divider = {}
+        ) {
+            Tab(
+                selected = semesterTabIndex == 0,
+                modifier = Modifier.height(20.dp),
+                onClick = { vm.setSemester(1) },
+                text = {
                     Text(
-                        "Semester:",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = SEMESTER_LABEL_SIZE)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    FilterChip(
-                        selected = state.semester == 1,
-                        onClick = { vm.setSemester(1) },
-                        label = { Text("1", fontSize = SEMESTER_LABEL_SIZE) }
-                    )
-                    Spacer(Modifier.width(SEMESTER_CHIP_GAP))
-                    FilterChip(
-                        selected = state.semester == 2,
-                        onClick = { vm.setSemester(2) },
-                        label = { Text("2", fontSize = SEMESTER_LABEL_SIZE) }
+                        "Semester 1",
+                        color = if (semesterTabIndex == 0) blue else Color.Black,
+                        fontSize = 12.sp,
+                        fontWeight = if (semesterTabIndex == 0) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
-            }
-            2 -> {
-                // 👇 now identical to Class: right-aligned, same font sizes and gaps
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
+            )
+            Tab(
+                selected = semesterTabIndex == 1,
+                modifier = Modifier.height(20.dp),
+                onClick = { vm.setSemester(2) },
+                text = {
                     Text(
-                        "Semester:",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = SEMESTER_LABEL_SIZE)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    FilterChip(
-                        selected = state.semester == 1,
-                        onClick = { vm.setSemester(1) },
-                        label = { Text("1", fontSize = SEMESTER_LABEL_SIZE) }
-                    )
-                    Spacer(Modifier.width(SEMESTER_CHIP_GAP))
-                    FilterChip(
-                        selected = state.semester == 2,
-                        onClick = { vm.setSemester(2) },
-                        label = { Text("2", fontSize = SEMESTER_LABEL_SIZE) }
+                        "Semester 2",
+                        color = if (semesterTabIndex == 1) blue else Color.Black,
+                        fontSize = 12.sp,
+                        fontWeight = if (semesterTabIndex == 1) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
+            )
+        }
+
+        // ===== Content =====
+        val labSemesterFiltered = remember(state.lab, state.semester) {
+            val monthsAllowed = if (state.semester == 1) 1..6 else 7..12
+            val iso = DateTimeFormatter.ISO_LOCAL_DATE
+            state.lab.filter { lb ->
+                runCatching { LocalDate.parse(lb.bookingDate, iso) }.getOrNull()
+                    ?.monthValue in monthsAllowed
             }
         }
 
         when (state.selectedTab) {
             0 -> LabTab(
+                semester = state.semester,
                 loading = state.labLoading,
                 error = state.labError,
-                items = state.lab,
+                items = labSemesterFiltered,
                 onRetry = vm::refreshLab,
-                onDownload = {
-                    val (title, headers, rows) = labPdfData(state.lab)
-                    val bytes = PdfUtils.buildSimpleTablePdf(title, headers, rows)
+                onDownloadWeek = { weekItems, weekLabel ->
+                    val (title, headers, rows) = labPdfData(weekItems)
+                    val bytes = PdfUtils.buildSimpleTablePdf("$title • $weekLabel", headers, rows)
                     pendingPdfBytes = bytes
-                    createDoc.launch("Lab_Schedule.pdf")
+                    val safe = weekLabel.replace(" ", "_").replace("–", "-")
+                    createDoc.launch("Lab_Schedule_$safe.pdf")
                 }
             )
             1 -> ClassTab(
@@ -224,7 +232,6 @@ fun SchedulerScreen(
                 error = state.classError,
                 items = state.classes,
                 onRetry = vm::refreshClass,
-                // Always download the FULL class schedule (all days)
                 onDownloadAll = {
                     val (title, headers, rows) = classPdfData(state.classes)
                     val bytes = PdfUtils.buildSimpleTablePdf(title, headers, rows)
@@ -238,7 +245,6 @@ fun SchedulerScreen(
                 items = state.assessments,
                 onRetry = vm::refreshAssessments,
                 onDownloadAll = {
-                    // Export FULL assessment schedule (all months/days)
                     val (title, headers, rows) = assessmentPdfData(state.assessments)
                     val bytes = PdfUtils.buildSimpleTablePdf(title, headers, rows)
                     pendingPdfBytes = bytes
@@ -249,28 +255,97 @@ fun SchedulerScreen(
     }
 }
 
-/* ------------------------- LAB TAB (UNCHANGED) ------------------------- */
+/* ------------------------- LAB TAB (UPDATED) ------------------------- */
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LabTab(
+    semester: Int,
     loading: Boolean,
     error: String?,
     items: List<LabBooking>,
     onRetry: () -> Unit,
-    onDownload: () -> Unit
+    onDownloadWeek: (weekItems: List<LabBooking>, weekLabel: String) -> Unit
 ) {
     val today = LocalDate.now()
+    val anchorYear = today.year
 
-    // Monday→Saturday window; if Sunday, show next week
-    val mondayStart = remember(today) {
-        if (today.dayOfWeek == DayOfWeek.SUNDAY) today.plusDays(1)
+    val (minWeekStart, maxWeekStart) = remember(semester) { semesterWeekWindow(anchorYear, semester) }
+
+    val initialWeekStart = remember(today, semester) {
+        val thisMonday = if (today.dayOfWeek == DayOfWeek.SUNDAY) today.plusDays(1)
         else today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        clampWeekToWindow(thisMonday, anchorYear, semester)
     }
-    var selectedDay by remember(mondayStart) {
-        mutableStateOf(if (today.dayOfWeek == DayOfWeek.SUNDAY) mondayStart else today)
+
+    var weekStart by remember { mutableStateOf(initialWeekStart) }
+    val weekEnd by remember(weekStart) { mutableStateOf(weekStart.plusDays(5)) }
+
+    LaunchedEffect(semester) {
+        weekStart = clampWeekToWindow(weekStart, anchorYear, semester)
     }
-    val monthTitle = remember(mondayStart) {
-        mondayStart.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+
+    var selectedIndex by remember(weekStart) {
+        mutableStateOf(
+            when {
+                today.isBefore(weekStart) || today.isAfter(weekEnd) -> 0
+                else -> (today.dayOfWeek.value - 1).coerceIn(0, 5)
+            }
+        )
+    }
+    val selectedDay = remember(weekStart, selectedIndex) { weekStart.plusDays(selectedIndex.toLong()) }
+
+    // Month title (July overlap rule kept)
+    val monthTitle = remember(weekStart, semester, anchorYear) {
+        val locale = Locale.getDefault()
+        if (semester == 2) {
+            val july1 = LocalDate.of(anchorYear, 7, 1)
+            val end = weekStart.plusDays(5)
+            if (!weekStart.isAfter(july1) && !end.isBefore(july1)) {
+                july1.month.getDisplayName(TextStyle.FULL, locale)
+            } else {
+                weekStart.month.getDisplayName(TextStyle.FULL, locale)
+            }
+        } else {
+            weekStart.month.getDisplayName(TextStyle.FULL, locale)
+        }
+    }
+
+    fun weekLabelShort(start: LocalDate): String {
+        val end = start.plusDays(5)
+        val monShortStart = start.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        val monShortEnd = end.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        return if (start.month == end.month && start.year == end.year) {
+            "${start.dayOfMonth}–${end.dayOfMonth} $monShortEnd ${end.year}"
+        } else {
+            "${start.dayOfMonth} $monShortStart – ${end.dayOfMonth} $monShortEnd ${end.year}"
+        }
+    }
+    val weekLabel = remember(weekStart) { weekLabelShort(weekStart) }
+
+    val iso = DateTimeFormatter.ISO_LOCAL_DATE
+    val hasWeekBookings by remember(items, weekStart) {
+        mutableStateOf(
+            items.any {
+                runCatching { LocalDate.parse(it.bookingDate, iso) }.getOrNull()
+                    ?.let { d -> !d.isBefore(weekStart) && !d.isAfter(weekEnd) } == true
+            }
+        )
+    }
+
+    val weekItems by remember(items, weekStart) {
+        mutableStateOf(
+            items.filter {
+                runCatching { LocalDate.parse(it.bookingDate, iso) }.getOrNull()
+                    ?.let { d -> !d.isBefore(weekStart) && !d.isAfter(weekEnd) } == true
+            }.sortedWith(compareBy({ it.bookingDate }, { it.startTime }))
+        )
+    }
+
+    // Day items (for the selected date)
+    val selectedKey = selectedDay.format(iso)
+    val dayItems = remember(items, selectedDay) {
+        items.filter { it.bookingDate == selectedKey }.sortedBy { it.startTime }
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -279,43 +354,91 @@ private fun LabTab(
             error != null -> ErrorBox(error, onRetry)
             items.isEmpty() -> EmptyBox("No lab bookings.")
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    MonthTitle(monthTitle)
-                    Spacer(Modifier.height(8.dp))
-                    WeekStripCard(
-                        mondayStart = mondayStart,
-                        selectedDay = selectedDay,
-                        onSelect = { selectedDay = it }
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    // Compute if this selected day has bookings (controls icon visibility)
-                    val dateKey = remember(selectedDay) {
-                        selectedDay.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                    // Top part that should collapse away
+                    item(key = "month-week-title") {
+                        MonthTitle(monthTitle)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { weekStart = clampWeekToWindow(weekStart.minusDays(7), anchorYear, semester) },
+                                enabled = weekStart > minWeekStart
+                            ) {
+                                Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous week", tint = Color.Unspecified)
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "Week: $weekLabel",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(Modifier.weight(1f))
+                            IconButton(
+                                onClick = { weekStart = clampWeekToWindow(weekStart.plusDays(7), anchorYear, semester) },
+                                enabled = weekStart < maxWeekStart
+                            ) {
+                                Icon(Icons.Filled.ChevronRight, contentDescription = "Next week", tint = Color.Unspecified)
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
                     }
-                    val hasBookings = remember(items, selectedDay) {
-                        items.any { it.bookingDate == dateKey }
+
+                    // Pinned header (weekday picker + "Today/Thursday" line)
+                    stickyHeader(key = "lab-sticky") {
+                        Surface(color = MaterialTheme.colorScheme.background) {
+                            Column(Modifier.fillMaxWidth()) {
+                                WeekStripCard(
+                                    mondayStart = weekStart,
+                                    selectedDay = selectedDay,
+                                    onSelect = { date ->
+                                        selectedIndex = (date.dayOfWeek.value - 1).coerceIn(0, 5)
+                                    }
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                DayHeader(
+                                    selectedDay = selectedDay,
+                                    today = today,
+                                    hasBookings = hasWeekBookings,
+                                    onDownload = { onDownloadWeek(weekItems, weekLabel) }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
                     }
 
-                    DayHeader(
-                        selectedDay = selectedDay,
-                        today = today,
-                        hasBookings = hasBookings,
-                        onDownload = onDownload
-                    )
+                    // Cards list
+                    if (dayItems.isEmpty()) {
+                        item(key = "lab-empty-day") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No bookings for this day.", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    } else {
+                        items(dayItems, key = { it.id }) { b ->
+                            val displayName = listOfNotNull(
+                                b.firstName?.trim().takeUnless { it.isNullOrEmpty() },
+                                b.lastName?.trim().takeUnless { it.isNullOrEmpty() }
+                            ).joinToString(" ").ifBlank { b.userName }
 
-                    Spacer(Modifier.height(8.dp))
-
-                    // List takes remaining space
-                    Box(Modifier.weight(1f)) {
-                        DayBookingsList(
-                            all = items,
-                            selectedDay = selectedDay
-                        )
+                            BookingRowTwoColumn(
+                                start = b.startTime,
+                                end = b.endTime,
+                                description = b.description,
+                                bookedBy = displayName
+                            )
+                            Spacer(Modifier.height(10.dp))
+                        }
                     }
                 }
             }
@@ -403,7 +526,7 @@ private fun WeekStripCard(
     }
 }
 
-/* ---- Day header + optional download button ---- */
+/* ---- Day header ---- */
 @Composable
 private fun DayHeader(
     selectedDay: LocalDate,
@@ -420,7 +543,6 @@ private fun DayHeader(
         val text = if (selectedDay == today) "Today"
         else selectedDay.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 
-        // Underline matches exactly the text width
         Column(modifier = Modifier.width(IntrinsicSize.Min)) {
             Text(
                 text = text,
@@ -437,67 +559,7 @@ private fun DayHeader(
         }
 
         Spacer(Modifier.weight(1f))
-
-        if (hasBookings) {
-            IconButton(
-                onClick = onDownload,
-                modifier = Modifier.size(DOWNLOAD_ICON_SIZE)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.download2),
-                    contentDescription = "Download Lab Schedule",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-    }
-}
-
-/* ---- Day bookings list (booked slots only) ---- */
-@Composable
-private fun DayBookingsList(
-    all: List<LabBooking>,
-    selectedDay: LocalDate
-) {
-    val iso = DateTimeFormatter.ISO_LOCAL_DATE
-    val key = selectedDay.format(iso)
-
-    val dayItems = remember(all, selectedDay) {
-        all.filter { it.bookingDate == key }.sortedBy { it.startTime }
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        if (dayItems.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No bookings for this day.", style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        } else {
-            items(dayItems, key = { it.id }) { b ->
-                val displayName = listOfNotNull(
-                    b.firstName?.trim().takeUnless { it.isNullOrEmpty() },
-                    b.lastName?.trim().takeUnless { it.isNullOrEmpty() }
-                ).joinToString(" ").ifBlank { b.userName }
-
-                BookingRowTwoColumn(
-                    start = b.startTime,
-                    end = b.endTime,
-                    description = b.description,
-                    bookedBy = displayName
-                )
-            }
-        }
+        // (Download icon intentionally removed)
     }
 }
 
@@ -510,10 +572,13 @@ private fun BookingRowTwoColumn(
     bookedBy: String
 ) {
     val lightBlue = Color(0xFFCAF5F6)
+    val shape = RoundedCornerShape(0.dp)
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(BorderStroke(2.dp, Color.White), shape),
+        shape = shape,
         elevation = CardDefaults.elevatedCardElevation(
             defaultElevation = BOOKING_CARD_ELEVATION
         )
@@ -549,7 +614,6 @@ private fun BookingRowTwoColumn(
             ) {
                 Text(
                     text = description?.takeIf { it.isNotBlank() } ?: "No description",
-                    // ✅ FIX: typTypography -> typography
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -565,7 +629,8 @@ private fun BookingRowTwoColumn(
     }
 }
 
-/* ------------------------- CLASS TAB (UPDATED) ------------------------- */
+/* ------------------------- CLASS TAB (unchanged visuals) ------------------------- */
+// (Class tab left as-is; it already behaves correctly)
 
 @Composable
 private fun ClassTab(
@@ -575,17 +640,16 @@ private fun ClassTab(
     onRetry: () -> Unit,
     onDownloadAll: () -> Unit
 ) {
-    val todayDoW = remember { LocalDate.now().dayOfWeek }        // today’s weekday
-    var selectedDoW by remember { mutableStateOf(todayOrMonday(todayDoW)) } // Mon–Fri only; default Monday if Sat/Sun
+    val todayDoW = remember { LocalDate.now().dayOfWeek }
+    var selectedDoW by remember { mutableStateOf(todayOrMonday(todayDoW)) }
 
-    // Normalize items ordering and group by weekday for quick lookups
     val normalized = remember(items) {
         val order = mapOf(
             "monday" to 1, "tuesday" to 2, "wednesday" to 3,
             "thursday" to 4, "friday" to 5
         )
         items
-            .filter { it.weekDay.lowercase(Locale.ROOT) in order.keys } // ignore Saturday & Sunday
+            .filter { it.weekDay.lowercase(Locale.ROOT) in order.keys }
             .sortedWith(
                 compareBy<ClassScheduleItem>(
                     { order[it.weekDay.lowercase(Locale.ROOT)] ?: 99 },
@@ -595,7 +659,6 @@ private fun ClassTab(
             )
     }
 
-    // Current day’s classes
     val selectedKey = selectedDoW.name.lowercase(Locale.ROOT)
     val dayNamePretty = selectedDoW.getDisplayName(TextStyle.FULL, Locale.getDefault())
     val isToday = selectedDoW == todayDoW
@@ -615,24 +678,21 @@ private fun ClassTab(
                         .fillMaxSize()
                         .padding(horizontal = 12.dp)
                 ) {
-                    // Weekday strip (Mon–Fri), NO DATES
                     ClassWeekStrip(
                         selected = selectedDoW,
                         onSelect = { selectedDoW = it }
                     )
                     Spacer(Modifier.height(12.dp))
 
-                    // Title row with “Today” logic + download ICON (no button)
                     ClassDayHeader(
                         isToday = isToday,
                         dayNamePretty = dayNamePretty,
                         hasClasses = hasClasses,
-                        onDownload = onDownloadAll   // always download ALL classes
+                        onDownload = onDownloadAll
                     )
 
                     Spacer(Modifier.height(8.dp))
 
-                    // List (two-column cards)
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 8.dp),
@@ -733,7 +793,6 @@ private fun ClassDayHeader(
     ) {
         val text = if (isToday) "Today" else dayNamePretty
 
-        // Underline matches exactly the text width
         Column(modifier = Modifier.width(IntrinsicSize.Min)) {
             Text(
                 text = text,
@@ -750,20 +809,6 @@ private fun ClassDayHeader(
         }
 
         Spacer(Modifier.weight(1f))
-
-        if (hasClasses) {
-            IconButton(
-                onClick = onDownload,
-                modifier = Modifier.size(DOWNLOAD_ICON_SIZE)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.download2),
-                    contentDescription = "Download Class Schedule",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
     }
 }
 
@@ -775,10 +820,13 @@ private fun ClassRowTwoColumn(
     venue: String?
 ) {
     val lightBlue = Color(0xFFCAF5F6)
+    val shape = RoundedCornerShape(0.dp)
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(BorderStroke(2.dp, Color.White), shape),
+        shape = shape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = CLASS_CARD_ELEVATION)
     ) {
         Row(
@@ -787,7 +835,6 @@ private fun ClassRowTwoColumn(
                 .height(IntrinsicSize.Min)
                 .padding(0.dp)
         ) {
-            // Left: times (white), HH:mm only
             Column(
                 modifier = Modifier
                     .weight(0.35f)
@@ -802,7 +849,6 @@ private fun ClassRowTwoColumn(
                 )
             }
 
-            // Right: module code + venue (with icon), light blue
             Column(
                 modifier = Modifier
                     .weight(0.65f)
@@ -811,7 +857,6 @@ private fun ClassRowTwoColumn(
                     .padding(14.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                // Module code (bold, bigger)
                 Text(
                     text = moduleCode ?: "",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = MODULE_CODE_FONT_SIZE),
@@ -820,7 +865,6 @@ private fun ClassRowTwoColumn(
                 )
                 Spacer(Modifier.height(MODULE_VENUE_GAP))
 
-                // Venue row: icon + text flush-left; nudge icon left so its visible glyph aligns with module code
                 Row(
                     modifier = Modifier.align(Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically
@@ -845,8 +889,9 @@ private fun ClassRowTwoColumn(
     }
 }
 
-/* ----------------------- ASSESSMENTS TAB (REBUILT) ----------------------- */
+/* ----------------------- ASSESSMENTS TAB (UPDATED) ----------------------- */
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AssessmentTab(
     loading: Boolean,
@@ -855,12 +900,15 @@ private fun AssessmentTab(
     onRetry: () -> Unit,
     onDownloadAll: () -> Unit
 ) {
-    // Pre-sort items by date then time for stable groupings
     val ordered = remember(items) {
         items.sortedWith(
             compareBy<Assessment>({ it.date }, { it.startTime ?: it.dueTime ?: "" }, { it.title })
         )
     }
+
+    val today = LocalDate.now()
+    val mondayIfSunday = remember(today) { if (today.dayOfWeek == DayOfWeek.SUNDAY) today.plusDays(1) else today }
+    val defaultDow = remember(mondayIfSunday) { mondayIfSunday.dayOfWeek }
 
     Box(Modifier.fillMaxSize()) {
         when {
@@ -868,7 +916,6 @@ private fun AssessmentTab(
             error != null -> ErrorBox(error, onRetry)
             ordered.isEmpty() -> EmptyBox("No assessments for this semester.")
             else -> {
-                // ✅ Only include months that actually have assessments
                 val availableMonths: List<YearMonth> = remember(ordered) {
                     val months = ordered.mapNotNull { parseLocalDate(it.date) }
                         .map { YearMonth.from(it) }
@@ -876,13 +923,16 @@ private fun AssessmentTab(
                         .sorted()
                     if (months.isEmpty()) listOf(YearMonth.now()) else months
                 }
-                var monthIndex by remember(availableMonths) { mutableStateOf(0) }
+
+                var monthIndex by remember(availableMonths, mondayIfSunday) {
+                    val autoYm = YearMonth.from(mondayIfSunday)
+                    val idx = availableMonths.indexOf(autoYm).let { if (it >= 0) it else 0 }
+                    mutableStateOf(idx)
+                }
                 val selectedMonth = availableMonths[monthIndex.coerceIn(0, availableMonths.lastIndex)]
 
-                // Weekday selection: default Monday (no "Today" logic here)
-                var selectedDoW by remember { mutableStateOf(DayOfWeek.MONDAY) }
+                var selectedDoW by remember { mutableStateOf(defaultDow) }
 
-                // Filter: items in selected month AND on selected weekday
                 val dayItems = remember(ordered, selectedMonth, selectedDoW) {
                     ordered.filter { a ->
                         parseLocalDate(a.date)?.let { d ->
@@ -891,74 +941,71 @@ private fun AssessmentTab(
                     }.sortedWith(compareBy({ it.date }, { it.startTime ?: it.dueTime ?: "" }))
                 }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    // Month picker (chevrons) over ONLY the months with assessments
-                    AssessmentMonthPicker(
-                        month = selectedMonth,
-                        canPrev = monthIndex > 0,
-                        canNext = monthIndex < availableMonths.lastIndex,
-                        onPrev = { if (monthIndex > 0) monthIndex-- },
-                        onNext = { if (monthIndex < availableMonths.lastIndex) monthIndex++ }
-                    )
+                    // Top (collapsible away)
+                    item(key = "assess-month-picker") {
+                        AssessmentMonthPicker(
+                            month = selectedMonth,
+                            canPrev = monthIndex > 0,
+                            canNext = monthIndex < availableMonths.lastIndex,
+                            onPrev = { if (monthIndex > 0) monthIndex-- },
+                            onNext = { if (monthIndex < availableMonths.lastIndex) monthIndex++ }
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
 
-                    Spacer(Modifier.height(8.dp))
-
-                    // Weekday strip (Mon–Sat), no dates
-                    AssessmentWeekStrip(
-                        selected = selectedDoW,
-                        onSelect = { selectedDoW = it }
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // Header with selected weekday name (NO "Today") + Download ICON (always whole schedule)
-                    AssessmentDayHeader(
-                        dayNamePretty = selectedDoW.getDisplayName(TextStyle.FULL, Locale.getDefault()),
-                        hasAny = ordered.isNotEmpty(),
-                        onDownloadAll = onDownloadAll
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // List (two-column cards)
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        if (dayItems.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 24.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        "No assessments for this weekday in ${
-                                            selectedMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
-                                        }. ",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
+                    // Pinned (weekday picker + day header)
+                    stickyHeader(key = "assess-sticky") {
+                        Surface(color = MaterialTheme.colorScheme.background) {
+                            Column(Modifier.fillMaxWidth()) {
+                                AssessmentWeekStrip(
+                                    selected = selectedDoW,
+                                    onSelect = { selectedDoW = it }
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                AssessmentDayHeader(
+                                    dayNamePretty = selectedDoW.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                                    hasAny = ordered.isNotEmpty(),
+                                    onDownloadAll = onDownloadAll
+                                )
+                                Spacer(Modifier.height(8.dp))
                             }
-                        } else {
-                            items(dayItems, key = { it.id ?: (it.title + it.date).hashCode() }) { a ->
-                                AssessmentRowTwoColumn(
-                                    date = a.date,                 // ← show date first
-                                    start = a.startTime,
-                                    end = a.endTime,
-                                    due = a.dueTime,
-                                    moduleCode = a.moduleCode,   // leave right side unchanged
-                                    title = a.title,
-                                    venue = a.venue,
-                                    description = a.description
+                        }
+                    }
+
+                    // Cards list
+                    if (dayItems.isEmpty()) {
+                        item(key = "assess-empty-day") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "No assessments for this weekday in ${
+                                        selectedMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+                                    }. ",
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                             }
+                        }
+                    } else {
+                        items(dayItems, key = { it.id ?: (it.title + it.date).hashCode() }) { a ->
+                            AssessmentRowTwoColumn(
+                                date = a.date,
+                                start = a.startTime,
+                                end = a.endTime,
+                                due = a.dueTime,
+                                moduleCode = a.moduleCode,
+                                title = a.title,
+                                venue = a.venue,
+                                description = a.description
+                            )
+                            Spacer(Modifier.height(10.dp))
                         }
                     }
                 }
@@ -976,7 +1023,6 @@ private fun AssessmentMonthPicker(
     onNext: () -> Unit
 ) {
     val title = remember(month) {
-        // e.g., "September 2025"
         "${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}"
     }
     Row(
@@ -1066,7 +1112,6 @@ private fun AssessmentDayHeader(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Underline matches exactly the text width (no "Today" label here)
         Column(modifier = Modifier.width(IntrinsicSize.Min)) {
             Text(
                 text = dayNamePretty,
@@ -1083,26 +1128,12 @@ private fun AssessmentDayHeader(
         }
 
         Spacer(Modifier.weight(1f))
-
-        if (hasAny) {
-            IconButton(
-                onClick = onDownloadAll,
-                modifier = Modifier.size(DOWNLOAD_ICON_SIZE)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.download2),
-                    contentDescription = "Download Full Assessment Schedule",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
     }
 }
 
 @Composable
 private fun AssessmentRowTwoColumn(
-    date: String?,             // NEW: show the date first
+    date: String?,
     start: String?,
     end: String?,
     due: String?,
@@ -1113,10 +1144,13 @@ private fun AssessmentRowTwoColumn(
 ) {
     val lightBlue = Color(0xFFCAF5F6)
     var showDesc by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(0.dp)
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(BorderStroke(2.dp, Color.White), shape),
+        shape = shape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = CLASS_CARD_ELEVATION)
     ) {
         Row(
@@ -1124,7 +1158,6 @@ private fun AssessmentRowTwoColumn(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            // Left: DATE first, then time/due
             Column(
                 modifier = Modifier
                     .weight(0.35f)
@@ -1134,11 +1167,12 @@ private fun AssessmentRowTwoColumn(
                 val dateText = date?.let { formatDate(it) }.orEmpty()
                 if (dateText.isNotEmpty()) {
                     Text(
-                        text = dateText,                 // e.g., "19 Aug 2025"
+                        text = dateText,
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0D6EFD)
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                 }
                 val timeText = when {
                     !start.isNullOrBlank() || !end.isNullOrBlank() -> "${hhmm(start)} – ${hhmm(end)}"
@@ -1149,11 +1183,12 @@ private fun AssessmentRowTwoColumn(
                     text = timeText,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Left
                 )
             }
 
-            // Right: details column (light blue) — unchanged per your request
             Column(
                 modifier = Modifier
                     .weight(0.65f)
@@ -1161,7 +1196,6 @@ private fun AssessmentRowTwoColumn(
                     .background(color = lightBlue)
                     .padding(14.dp)
             ) {
-                // Module code (bold, bigger)
                 Text(
                     text = moduleCode ?: "",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = MODULE_CODE_FONT_SIZE),
@@ -1169,7 +1203,6 @@ private fun AssessmentRowTwoColumn(
                 )
                 Spacer(Modifier.height(6.dp))
 
-                // Title
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium
@@ -1177,49 +1210,54 @@ private fun AssessmentRowTwoColumn(
 
                 Spacer(Modifier.height(MODULE_VENUE_GAP))
 
-                // Venue row (icon + uppercase text), same sizing as Class
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Place,
-                        contentDescription = "Venue",
-                        tint = Color.Unspecified,
-                        modifier = Modifier
-                            .offset(x = VENUE_ICON_START_NUDGE)
-                            .size(VENUE_ICON_SIZE)
-                    )
-                    if (VENUE_TEXT_GAP > 0.dp) Spacer(Modifier.width(VENUE_TEXT_GAP))
+                val venueText = venue?.trim().orEmpty()
+                if (venueText.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Place,
+                            contentDescription = "Venue",
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .offset(x = VENUE_ICON_START_NUDGE)
+                                .size(VENUE_ICON_SIZE)
+                        )
+                        if (VENUE_TEXT_GAP > 0.dp) Spacer(Modifier.width(VENUE_TEXT_GAP))
+                        Text(
+                            text = venueText.uppercase(Locale.getDefault()),
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = VENUE_TEXT_FONT_SIZE)
+                        )
+                    }
+                }
+
+                if (!description.isNullOrBlank() && showDesc) {
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text = (venue ?: "").uppercase(Locale.getDefault()),
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = VENUE_TEXT_FONT_SIZE)
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Justify
                     )
                 }
 
-                // Collapsible description (only if present)
+                Spacer(Modifier.weight(1f))
+
                 if (!description.isNullOrBlank()) {
-                    Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showDesc = !showDesc },
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End as Arrangement.Horizontal
                     ) {
-                        Icon(
-                            imageVector = if (showDesc) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                            contentDescription = if (showDesc) "Hide description" else "Show description",
-                            tint = Color.Unspecified
-                        )
-                        Spacer(Modifier.width(4.dp))
                         Text(
                             text = if (showDesc) "Hide description" else "Show description",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                    }
-                    if (showDesc) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = description,
-                            style = MaterialTheme.typography.bodySmall
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            imageVector = if (showDesc) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (showDesc) "Hide description" else "Show description",
+                            tint = Color.Unspecified
                         )
                     }
                 }
@@ -1340,3 +1378,25 @@ private fun todayOrMonday(today: DayOfWeek): DayOfWeek {
 private fun parseLocalDate(iso: String?): LocalDate? = try {
     if (iso.isNullOrBlank()) null else LocalDate.parse(iso)
 } catch (_: Throwable) { null }
+
+/* ---- NEW: Semester week-window helpers for Lab navigation ---- */
+private fun semesterWeekWindow(year: Int, semester: Int): Pair<LocalDate, LocalDate> {
+    return if (semester == 1) {
+        val start = LocalDate.of(year, 1, 1).with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
+        val end = LocalDate.of(year, 6, 30).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        start to end
+    } else {
+        val start = LocalDate.of(year, 7, 1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val end = LocalDate.of(year, 12, 31).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        start to end
+    }
+}
+
+private fun clampWeekToWindow(candidate: LocalDate, year: Int, semester: Int): LocalDate {
+    val (minW, maxW) = semesterWeekWindow(year, semester)
+    return when {
+        candidate.isBefore(minW) -> minW
+        candidate.isAfter(maxW) -> maxW
+        else -> candidate
+    }
+}

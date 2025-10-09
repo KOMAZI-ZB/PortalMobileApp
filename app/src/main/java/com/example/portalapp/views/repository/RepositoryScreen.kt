@@ -44,6 +44,11 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private object RepositoryStyle {
+    val tabBarHeight = 40.dp
+    val blue = Color(0xFF0D6EFD)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositoryScreen(
@@ -60,15 +65,15 @@ fun RepositoryScreen(
     ) { _ ->
         Column(Modifier.fillMaxSize()) {
 
-            // ── Tabs bar (edge-to-edge, like Notifications) ──
-            val blue = Color(0xFF0D6EFD)
-            val lightBlue = Color(0xFFCAF5F6)
-            val grey = Color(0xFF6B7280)
+            // ── Tabs bar: implemented exactly like Notifications ──
+            val blue = RepositoryStyle.blue
 
             TabRow(
                 selectedTabIndex = selectedTab,
-                modifier = Modifier.fillMaxWidth(),   // spans full width
-                containerColor = lightBlue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(RepositoryStyle.tabBarHeight),
+                containerColor = Color.White,   // white background
                 contentColor = blue,
                 indicator = { positions ->
                     TabRowDefaults.Indicator(
@@ -78,27 +83,29 @@ fun RepositoryScreen(
                         color = blue
                     )
                 },
-                divider = {} // no extra divider
+                divider = {}
             ) {
                 Tab(
                     selected = selectedTab == 0,
+                    modifier = Modifier.height(RepositoryStyle.tabBarHeight),
                     onClick = { selectedTab = 0 },
                     text = {
                         Text(
                             "External",
                             fontWeight = if (selectedTab == 0) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (selectedTab == 0) blue else grey
+                            color = if (selectedTab == 0) blue else Color.Black
                         )
                     }
                 )
                 Tab(
                     selected = selectedTab == 1,
+                    modifier = Modifier.height(RepositoryStyle.tabBarHeight),
                     onClick = { selectedTab = 1 },
                     text = {
                         Text(
                             "Internal",
                             fontWeight = if (selectedTab == 1) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (selectedTab == 1) blue else grey
+                            color = if (selectedTab == 1) blue else Color.Black
                         )
                     }
                 )
@@ -127,7 +134,7 @@ fun RepositoryScreen(
                     }
                 }
 
-                // ── Internal: mirror ModuleDocuments UI ──
+                // ── Internal: mirror ModuleDocuments UI (unchanged) ──
                 1 -> {
                     if (state.internal.isEmpty()) {
                         Box(
@@ -202,7 +209,6 @@ private fun ExternalRepoMasonryCard(
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 30.dp)
     ) {
         Column(Modifier.fillMaxWidth()) {
-            // Top image (kept as in your previous code)
             val imageRes = repoImageFor(item.label)
             Box(
                 modifier = Modifier
@@ -216,7 +222,6 @@ private fun ExternalRepoMasonryCard(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                // Translucent scrim (kept from your previous version)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -224,7 +229,6 @@ private fun ExternalRepoMasonryCard(
                 )
             }
 
-            // Bottom content area (white)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -248,7 +252,6 @@ private fun ExternalRepoMasonryCard(
 }
 
 private fun masonryHeightFor(label: String): Dp {
-    // Simple deterministic height mix for variety (short/medium/tall)
     val base = 110.dp
     return when ((label.hashCode() and 0x7fffffff) % 3) {
         0 -> base
@@ -282,7 +285,6 @@ private fun InternalDocRowModuleStyle(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: file-type icon
             Image(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
@@ -291,7 +293,6 @@ private fun InternalDocRowModuleStyle(
                     .padding(end = 10.dp)
             )
 
-            // Middle: title + meta
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = doc.title,
@@ -305,7 +306,6 @@ private fun InternalDocRowModuleStyle(
                 )
             }
 
-            // Right: download
             IconButton(onClick = onDownload) {
                 Image(
                     painter = painterResource(id = R.drawable.download),
@@ -319,9 +319,9 @@ private fun InternalDocRowModuleStyle(
 
 /* -------------------------- Helpers (copied from ModuleDocuments) -------------------------- */
 
-@SuppressLint("NewApi") // safe with coreLibraryDesugaring
+@SuppressLint("NewApi")
 private fun formatDateOnly(iso: String): String = try {
-    val ldt = LocalDateTime.parse(iso) // e.g. 2025-08-15T18:14:32.5021051
+    val ldt = LocalDateTime.parse(iso)
     ldt.toLocalDate().format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
 } catch (_: Throwable) {
     try {
@@ -337,7 +337,6 @@ private fun formatDateOnly(iso: String): String = try {
     }
 }
 
-/** Map a document to the appropriate drawable based on extension. */
 private fun iconResFor(doc: Document): Int {
     val fromUrl = extFrom(doc.fileUrl)
     val fromTitle = extFrom(doc.title)
@@ -363,7 +362,6 @@ private fun extFrom(nameOrUrl: String?): String? {
     } else null
 }
 
-/** Try to surface a size label if your model exposes it; otherwise null. */
 private fun extractSizeLabelOrNull(doc: Document): String? {
     val byteCount: Long? = tryGetNumberField(doc, "sizeBytes")
         ?: tryGetNumberField(doc, "fileSizeBytes")
@@ -401,7 +399,6 @@ private fun humanReadableBytes(bytes: Long): String {
 /* -------------------------- Misc -------------------------- */
 
 private fun buildAbsoluteUrl(url: String): String {
-    // If server returned a relative path, prefix with base; if absolute, pass through.
     return if (url.startsWith("http://") || url.startsWith("https://")) {
         url
     } else {
@@ -410,7 +407,6 @@ private fun buildAbsoluteUrl(url: String): String {
     }
 }
 
-// Map repository label -> drawable image in /res/drawable (external logos)
 private fun repoImageFor(label: String): Int {
     val key = label.trim().lowercase()
     return when {
@@ -423,7 +419,6 @@ private fun repoImageFor(label: String): Int {
         key == "sciencedirect" -> R.drawable.sciencedirect
         key == "springernature" -> R.drawable.springernature
 
-        // fallbacks
         "springerlink" in key -> R.drawable.springerlink
         "springer" in key && "nature" in key -> R.drawable.springernature
         "scopus" in key -> R.drawable.scopus

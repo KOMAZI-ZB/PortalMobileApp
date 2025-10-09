@@ -45,7 +45,6 @@ import com.example.portalapp.views.notifications.NotificationsScreen
 import com.example.portalapp.views.repository.RepositoryScreen
 import com.example.portalapp.views.scheduler.SchedulerScreen
 import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 // ----- Routes -----
 private sealed class Dest(val route: String, val label: String, val iconRes: Int) {
@@ -80,7 +79,7 @@ fun Navigation(
     alwaysShowLabels: Boolean = true,
     // 🔧 Top bar adjustable sizes (NEW)
     topTitleSizeSp: Int = 25,                                  // change title text size here
-    logoutIconSize: Dp = 70.dp                                 // change logout icon size here
+    logoutIconSize: Dp = 120.dp                                 // change logout icon size here
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -108,7 +107,7 @@ fun Navigation(
                         text = currentTitle(currentRoute),
                         color = white,
                         fontSize = topTitleSizeSp.sp, // ← adjustable title size
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Thin
                     )
                 },
                 navigationIcon = {
@@ -223,8 +222,9 @@ fun Navigation(
                 val moduleId = entry.arguments!!.getInt("moduleId")
                 val codeEnc = entry.arguments!!.getString("code") ?: ""
                 val nameEnc = entry.arguments!!.getString("name") ?: ""
-                val code = URLDecoder.decode(codeEnc, StandardCharsets.UTF_8)
-                val name = URLDecoder.decode(nameEnc, StandardCharsets.UTF_8)
+                // Use API-compatible overload
+                val code = URLDecoder.decode(codeEnc, "utf-8")
+                val name = URLDecoder.decode(nameEnc, "utf-8")
                 ModuleDocumentsScreen(moduleId = moduleId, moduleTitle = "$code • $name")
             }
         }
